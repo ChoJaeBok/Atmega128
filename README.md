@@ -14,12 +14,11 @@
 ![수정](https://user-images.githubusercontent.com/60215726/75418454-ddc66080-5976-11ea-8e96-dc4e2c83207e.PNG)
 
    
-## 작품 동작
+## 4. 작품 동작
 ![작품동작](https://user-images.githubusercontent.com/60215726/75417917-8673c080-5975-11ea-806a-fecd06ab2ad1.PNG)
    
-## 코드
-프로젝트에서 사용된 코드  1번에 해당하는 코드는 제가 작성한 코드이며, LCD에 관한 코드는 수업의 교수님께서 지원해주신 파일입니다.   
-1. 프로젝트의 코드
+## 5. 프로젝트의 주요코드   
+
 ```c
 
 #include <avr/io.h>
@@ -608,235 +607,13 @@ void DC_Motor_PWM( short Vref )   // DC 모터 PWM 신호 발생 함수
 
 
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 
 
-
 ```
-2. LCD 제어 모듈의 헤더파일.
-```c
-//
-//================================================
-//  파일명 : lcd.h - LCD제어 모듈의 헤더파일
-//================================================
-//
-
-#ifndef __LCD_H__
-#define __LCD_H__
-
-// LCD 제어 명령
-
-#define ALLCLR			0x01	// 화면을 지운다.
-#define HOME			0x02	// 커서를 홈으로 보낸다.
-#define LN21			0xc0	// 커서를 2번째 라인의 첫번째에 위치시킴
-#define ENTMOD			0x06	// entry mode
-#define FUNSET			0x28	// function set   
-#define DISP_ON			0x0c	// 디스플레이를 켠다.
-#define DISP_OFF		0x08	// 디스플레이를 끈다.
-#define CURSOR_ON		0x0e	// 커서를 켠다.
-#define CURSOR_OFF		0x0c	// 커서를 끈다.
-#define CURSOR_LSHIFT  	0x10	// 커서를 왼쪽을 이동시킨다.
-#define CURSOR_RSHIFT	0x14	// 커서를 오른쪽으로 이동시킨다.
-#define DISP_LSHIFT		0x18	// 디스플레이를 왼쪽으로 이동시킨다.
-#define DISP_RSHIFT		0x1c	// 디스플레이를 오른쪽으로 이동시킨다.
-
-// LCD 제어모듈 함수
-
-void LcdInit(void);			
-void LcdCommand(char command);
-void LcdMove(char line, char pos);
-void LcdPutchar(char ch);
-void LcdPuts(char* str);
-void LcdNewchar(char ch, char font[]);
-
-
-#endif	// __LCD_H__
-
-```
-1. LCD 구동함수
-```c
-//=======================================================
-//  LCD.C : LCD 구동함수의 모음
-//=======================================================
-
-#include <avr/io.h>
-#include <util/delay.h>
-#include "lcd.h"
-
-// LCD 포트 주소
-#define LCD_PORT	PORTC
-#define LCD_DDR		DDRC
-// 내부 함수 		
-static void checkbusy(void);
-static void write_command(char command);
-static void write_data(char ch);
-
-//===================================
-// 기능 : LCD Display를 초기화한다.
-//==================================
-
-void LcdInit(void)
-{
-	LCD_DDR	= 0xFF;			// LCD포트를 출력으로 설정
-	_delay_ms(15);
-	write_command(0x30);
-	_delay_ms(5);
-	write_command(0x30);
-	_delay_ms(1);
-	write_command(0x32);
-
-	LcdCommand(FUNSET);
-	LcdCommand(DISP_OFF);
-	LcdCommand(ALLCLR);
-	LcdCommand(ENTMOD);
-
-	LcdCommand(DISP_ON);		// 화면을 켠다.
-}
-
-//======================================================
-// LCD에 명령을 출력하는 함수 
-//
-//	입력 : command - LCD에 내리는 명령 
-//	  		      lcd.h에 정의된 명령을 사용할 것
-//
-//======================================================
-
-void LcdCommand(char command)
-{ 
-	checkbusy();
-	write_command(command);
-	if(command == ALLCLR || command == HOME)
-		_delay_ms(2);
-}
-
-//======================================================
-// 현재위치에 문자 하나를 출력한다.  
-//
-//	입력 : ch - 화면에 쓸 문자 코드
-//
-//======================================================
-
-void LcdPutchar(char ch)
-{
-	checkbusy();
-	write_data(ch);
-}
-
-//======================================================
-// 현재위치에 문자열을 출력한다.  
-//
-//	입력 : str - 출력할 문자열
-//
-//======================================================
-
-void LcdPuts(char* str)
-{
-	while(*str)  			// *str이 NULL 문자가 아니면 루프를 돈다.
-	{
-		LcdPutchar(*str);	// 문자 *str을 화면에 출력
-		str++;				// str이 다음 문자를 가리킴
-	}
-}
-
-//=======================================================
-// 글자를 쓸 위치를 지정된 위치(line, pos)로 이동시킨다.
-// 입력 : 	line - 화면의 행(0행부터 시작)
-//			pos  - 화면의 열(0열부터 시작)
-//=======================================================
-void LcdMove(char line, char pos)
-{
-	pos = (line << 6) + pos; 
-  	pos |= 0x80;			// 비트 7를 세트한다.
-
-  	LcdCommand(pos);
-}
-
-//=======================================================
-// 명령 레지스터에 명령을 쓴다.
-// 입력 : command - LCD에 내리는 명령 코드
-//=======================================================
-
-static void write_command(char command)
-{ 
-	char temp;
- 
-	//
-	// 상위 니블 출력
-	//
-  	temp = (command & 0xF0)|0x04;	//0x04 : RS=0(명령)
-									// RW=0(쓰기),E=1
-  	LCD_PORT = temp;
-  	LCD_PORT = temp & ~0x04;		// E = 0
-
-  	//
-  	// 하위 니블 출력
-  	//
-  	temp = (command << 4) | 0x04;	// 0x04 :RS=0(명령)
-									// RW=0(쓰기),E=1
-  	LCD_PORT = temp;	
-	LCD_PORT = temp & ~0x04;		// E = 0
-	_delay_us(1);
-}
-
-//========================================
-// 데이터 레지스터에 명령을 쓴다.
-// 입력 : ch - LCD에 쓸 데이터 
-//========================================
-
-static void write_data(char ch)
-{
-	unsigned char temp;
-
-	// 상위 니블 출력
-	//
-  	temp = (ch & 0xF0)|0x05;		// 0x05:RS=1(데이터)
-									// RW=0(쓰기),E=1
-	LCD_PORT = temp;
-	LCD_PORT = temp & ~0x04; 		// E = 0
-
-
-	// 하위 니블 출력
-	//
-	temp = (ch << 4) | 0x05;		// 0x05:RS=1(데이터)
-									// RW=0(쓰기),E=1
-	LCD_PORT = temp;
-	LCD_PORT = temp & ~0x04;		// E = 0
-}
-
-
-//========================================
-// 문자코드 ch에 새로운 글꼴을 등록한다.
-// 입력 : ch	- 문자코드
-//	      font	- 글꼴 데이터
-//========================================
-
-void LcdNewchar(char ch, char font[])	// 글자 등록함수
-{
-	int i;
-		
-	ch <<= 3;			// ch = ch << 3;과 같음
-	ch |= 0x40;		// 비트6을 세트 => CGRAM 주소설정
-
-	LcdCommand(ch);	// CGRAM 주소설정 =>LcdPutchar()로 
-					// 쓰는 문자는 CGRAM에 저장
-
-	for(i=0; i<8; i++)	// 글꼴을 CGRAM에 저장한다.
-		LcdPutchar(font[i]);
-}
-
-
-//==================================================
-// 50usec의 시간지연으로 BF 플래그 검사를 대체
-//==================================================
-
-static void checkbusy()
-{
-  	_delay_us(10); 
-  	_delay_us(10); 
-  	_delay_us(10); 
-  	_delay_us(10); 
-  	_delay_us(10); 
-}
-
-```
+   
+## 6. 작품 이미지 및 시연 영상
+1) 이미지
+![시연모음](https://user-images.githubusercontent.com/60215726/75425658-7f08e300-5986-11ea-8a7b-9f17d3dabc0c.PNG)
+   
+2) 시연 
