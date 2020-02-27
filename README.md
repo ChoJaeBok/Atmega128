@@ -11,7 +11,8 @@
 5) 아이가 일어난 것을 부모님께 확인시키기 위해 스위치를 눌러 LCD로 알리게 됩니다.  
 (또한 스위치를 통해 광량 센서와 버저, 초음파 등의 작동을 중지하도록 해주는 코드도 함께 넣어 작동을 멈추도록 했습니다.)
 ## 3. 사용 부품
-![작품 구성](https://user-images.githubusercontent.com/60215726/75417911-85429380-5975-11ea-85e1-3a6404ea4110.PNG)
+![수정](https://user-images.githubusercontent.com/60215726/75418454-ddc66080-5976-11ea-8e96-dc4e2c83207e.PNG)
+
    
 ## 작품 동작
 ![작품동작](https://user-images.githubusercontent.com/60215726/75417917-8673c080-5975-11ea-806a-fecd06ab2ad1.PNG)
